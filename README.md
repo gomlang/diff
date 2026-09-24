@@ -71,10 +71,10 @@ the standard English spelling; generate reference patches with `LC_ALL=C`.
 ## Validation and example executable
 
 ```sh
-just ecosystem-test diff
-../../goml-dev/ecosystem/consumers/diff/_artifact/bin/diff produce old.txt new.txt change.patch
-../../goml-dev/ecosystem/consumers/diff/_artifact/bin/diff produce-linear old.txt new.txt change.patch
-../../goml-dev/ecosystem/consumers/diff/_artifact/bin/diff apply old.txt change.patch output.txt
+(cd ../verification && just ecosystem-test diff)
+consumer/_artifact/bin/diff produce old.txt new.txt change.patch
+consumer/_artifact/bin/diff produce-linear old.txt new.txt change.patch
+consumer/_artifact/bin/diff apply old.txt change.patch output.txt
 ```
 
 The tests exhaustively compare all pairs of binary sequences of lengths zero
@@ -85,6 +85,6 @@ trimmed identical inputs and comparator direction when inputs are transposed.
 Other tests cover Unicode,
 CRLF, no-final-newline files, split hunks, malformed patches and conflict checks.
 The separate consumer adds randomized properties through the independently
-resolved `ecosystem::proptest` module. The consumer’s ordinary native GoML test checks [48 preserved input pairs](../../goml-dev/ecosystem/consumers/diff/tests/data/README.md) with both GoML generation algorithms and GNU `patch`, and verifies application of fresh GNU `diff -u` output in the reverse direction. GNU diffutils and patch must be installed; Python is not required. Temporary files use `ecosystem::tempfile` and are cleaned up after the test.
+resolved `ecosystem::proptest` module. The consumer’s ordinary native GoML test checks [48 preserved input pairs](consumer/tests/data/README.md) with both GoML generation algorithms and GNU `patch`, and verifies application of fresh GNU `diff -u` output in the reverse direction. GNU diffutils and patch must be installed; Python is not required. Temporary files use `ecosystem::tempfile` and are cleaned up after the test.
 
 Algorithm reference: [Eugene W. Myers, An O(ND) Difference Algorithm and Its Variations](https://neil.fraser.name/writing/diff/myers.pdf).
