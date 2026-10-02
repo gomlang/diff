@@ -72,3 +72,14 @@ fn randomized_patch_roundtrips() -> () {
         ),
     );
 }
+
+#[test]
+fn downstream_sparse_patch_preserves_large_context() -> () {
+    let middle = "unchanged\n".repeat(10000);
+    let old = "before\n" + middle + "after\n";
+    let new = "BEFORE\n" + middle + "AFTER\n";
+    let patch = testing::expect_ok(diff::patch(old, new, "old", "new", 2), "sparse patch");
+    testing::assert_eq(patch.hunks.len(), 2);
+    testing::assert_eq(testing::expect_ok(patch.apply(old), "apply"), new);
+    testing::assert_eq(testing::expect_ok(patch.reverse().apply(new), "reverse"), old);
+}

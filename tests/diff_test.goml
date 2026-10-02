@@ -296,3 +296,54 @@ fn separated_hunks_and_invalid_models() -> () {
     testing::assert_err(invalid.to_unified());
     testing::assert_err(invalid.apply(""));
 }
+
+#[test]
+fn myers_reconstructs_long_equal_runs_as_single_operations() -> () {
+    let values: Vec[isize] = Vec::new();
+    for index in 0..500000 {
+        values.push(index);
+    }
+    let operations = testing::expect_ok(
+        diff::sequence_by(
+            values.as_slice(),
+            values.as_slice(),
+            |a, b| a == b,
+            diff::Options { max_work: 500001, max_trace: 1 },
+        ),
+        "long equal run",
+    );
+    testing::assert(
+        operations
+            == Vec::from_array(
+                [
+                    diff::Op {
+                        tag: diff::Tag::Equal,
+                        old_start: 0,
+                        old_end: 500000,
+                        new_start: 0,
+                        new_end: 500000,
+                    },
+                ],
+            ),
+    );
+    let changed = values.copy();
+    changed[0] = -1;
+    changed[499999] = -2;
+    let edits = testing::expect_ok(
+        diff::sequence(values.as_slice(), changed.as_slice()),
+        "long middle run",
+    );
+    testing::assert_eq(diff::distance(edits), 4);
+    testing::assert_eq(edits.len(), 5);
+    testing::assert_eq(
+        edits[2],
+        diff::Op {
+            tag: diff::Tag::Equal,
+            old_start: 1,
+            old_end: 499999,
+            new_start: 1,
+            new_end: 499999,
+        },
+    );
+    testing::assert(diff::invert(diff::invert(edits)) == edits);
+}
