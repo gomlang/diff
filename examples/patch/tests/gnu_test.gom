@@ -1,5 +1,6 @@
 package tests;
 
+use ecosystem::diff::examples::patch as example_files;
 use ecosystem::diff;
 use ecosystem::tempfile;
 use std::bytes;
@@ -23,7 +24,7 @@ fn gnu_command(program: string, arguments: Vec[string]) -> process::Output {
 #[test]
 fn unified_patches_interoperate_with_gnu_diff_and_patch() -> () {
     let source = testing::expect_ok(
-        fs::read_file_structured("tests/data/gnu-cases.json"),
+        fs::read_file_structured(example_files::fixture_path("tests/data/gnu-cases.json")),
         "GNU inputs",
     );
     let cases: Vec[Vec[string]] = testing::expect_ok(json::from_string(source), "GNU input pairs");

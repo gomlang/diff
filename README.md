@@ -72,9 +72,9 @@ the standard English spelling; generate reference patches with `LC_ALL=C`.
 
 ```sh
 (cd ../verification && just ecosystem-test diff)
-consumer/_artifact/bin/diff produce old.txt new.txt change.patch
-consumer/_artifact/bin/diff produce-linear old.txt new.txt change.patch
-consumer/_artifact/bin/diff apply old.txt change.patch output.txt
+_artifact/bin/examples/patch/patch produce old.txt new.txt change.patch
+_artifact/bin/examples/patch/patch produce-linear old.txt new.txt change.patch
+_artifact/bin/examples/patch/patch apply old.txt change.patch output.txt
 ```
 
 The tests exhaustively compare all pairs of binary sequences of lengths zero
@@ -84,7 +84,19 @@ cover a large edit distance, exact score-row limits, bounded comparator calls,
 trimmed identical inputs and comparator direction when inputs are transposed.
 Other tests cover Unicode,
 CRLF, no-final-newline files, split hunks, malformed patches and conflict checks.
-The separate consumer adds randomized properties through the independently
-resolved `ecosystem::proptest` module. The consumer’s ordinary native GoML test checks [48 preserved input pairs](consumer/tests/data/README.md) with both GoML generation algorithms and GNU `patch`, and verifies application of fresh GNU `diff -u` output in the reverse direction. GNU diffutils and patch must be installed; Python is not required. Temporary files use `ecosystem::tempfile` and are cleaned up after the test.
+The `examples/patch` example adds randomized properties through the
+`ecosystem::proptest` development dependency. The example’s ordinary native GoML test checks [48 preserved input pairs](examples/patch/tests/data/README.md) with both GoML generation algorithms and GNU `patch`, and verifies application of fresh GNU `diff -u` output in the reverse direction. GNU diffutils and patch must be installed; Python is not required. Temporary files use `ecosystem::tempfile` and are cleaned up after the test.
 
 Algorithm reference: [Eugene W. Myers, An O(ND) Difference Algorithm and Its Variations](https://neil.fraser.name/writing/diff/myers.pdf).
+
+## Development and examples
+
+Requires GoML 0.1.55 or newer. The `examples/patch/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
+
+```sh
+goml run --example patch
+goml test
+goml verify --timeout 300s
+```
+
+`goml test` builds the example and runs its tests. `goml verify` repeats the example checks as an independent module against an isolated registry snapshot. `(cd ../verification && just ecosystem-test diff)` also retains the library-specific smoke and compatibility checks.

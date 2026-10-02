@@ -1,2 +1,6 @@
 [module]
 path = "ecosystem::diff"
+
+[dev-dependencies]
+"ecosystem::proptest" = "0.1.0"
+"ecosystem::tempfile" = "0.1.0"
