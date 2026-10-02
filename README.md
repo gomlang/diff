@@ -16,7 +16,13 @@ fn update(old: string, new: string) -> Result[string, string] {
 
 `sequence(old, new)` accepts slices of any `PartialEq` type. `sequence_by` accepts
 a custom comparator and `Options { max_work, max_trace }`. The default budgets
-are 10,000,000 search steps and 1,000,000 retained diagonal cells. Exceeding either
+are 10,000,000 search work units and 1,000,000 retained diagonal cells.
+Myers charges each initialized trace cell before allocating the row, each visited
+diagonal, and every comparator invocation before it runs, whether equal or not.
+This tighter accounting can exhaust budgets that previously ignored row setup
+and failed comparisons. An unchanged N-element input costs N + 2 units for N > 0.
+Empty-side direct paths invoke no comparator. Budgets cover library work rather
+than time or allocation inside application comparators. Exceeding either
 returns a recoverable error rather than silently producing a nonminimal result.
 Empty-side changes take a direct path. Search costs are proportional to sequence
 length and edit distance; this implementation retains quadratic trace space in

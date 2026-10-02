@@ -119,6 +119,14 @@ fn backtrack(trace: Vec[Vec[isize]], old_len: isize, new_len: isize) -> Vec[Op] 
     result
 }
 
+fn charge_search(work: Ref[isize], amount: isize, maximum: isize) -> Result[(), string] {
+    if amount > maximum - work.get() {
+        return Result::Err("diff work budget exceeded")
+    }
+    work.set(work.get() + amount);
+    Result::Ok(())
+}
+
 pub fn sequence_by[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, options: Options) -> Result[
     Vec[Op],
     string,
@@ -160,14 +168,16 @@ pub fn sequence_by[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, optio
         )
     }
     let trace: Vec[Vec[isize]] = Vec::new();
-    let mut work = 0;
+    let work = Ref::new(0);
     let mut cells = 0;
     let mut d = 0;
     loop {
-        let width = 2 * d + 1;
-        if width > options.max_trace - cells {
+        let remaining = options.max_trace - cells;
+        if remaining < 1 || d > (remaining - 1) / 2 {
             return Result::Err("diff trace budget exceeded")
         }
+        let width = 2 * d + 1;
+        charge_search(work, width, options.max_work)?;
         cells += width;
         let row: Vec[isize] = Vec::with_capacity(width);
         for _ in 0..width {
@@ -175,10 +185,7 @@ pub fn sequence_by[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, optio
         }
         let mut k = -d;
         while k <= d {
-            work += 1;
-            if work > options.max_work {
-                return Result::Err("diff work budget exceeded")
-            }
+            charge_search(work, 1, options.max_work)?;
             let mut x: isize = if d == 0 {
                 0
             } else {
@@ -190,13 +197,13 @@ pub fn sequence_by[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, optio
                 }
             };
             let mut y = x - k;
-            while x < old.len() && y < new.len() && equal(old[x], new[y]) {
+            while x < old.len() && y < new.len() {
+                charge_search(work, 1, options.max_work)?;
+                if !equal(old[x], new[y]) {
+                    break
+                }
                 x += 1;
                 y += 1;
-                work += 1;
-                if work > options.max_work {
-                    return Result::Err("diff work budget exceeded")
-                }
             }
             row[k + d] = x;
             if x >= old.len() && y >= new.len() {
