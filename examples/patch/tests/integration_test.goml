@@ -83,3 +83,21 @@ fn downstream_sparse_patch_preserves_large_context() -> () {
     testing::assert_eq(testing::expect_ok(patch.apply(old), "apply"), new);
     testing::assert_eq(testing::expect_ok(patch.reverse().apply(new), "reverse"), old);
 }
+
+#[test]
+fn downstream_comparators_do_not_run_after_search_budget_exhaustion() -> () {
+    let values = Vec::from_array(["a"]);
+    let calls = Ref::new(0);
+    testing::assert_err(
+        diff::sequence_by(
+            values.as_slice(),
+            values.as_slice(),
+            |left, right| {
+                calls.set(calls.get() + 1);
+                left == right
+            },
+            diff::Options { max_work: 2, max_trace: 100 },
+        ),
+    );
+    testing::assert_eq(calls.get(), 0);
+}
