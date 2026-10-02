@@ -20,7 +20,9 @@ are 10,000,000 search steps and 1,000,000 retained diagonal cells. Exceeding eit
 returns a recoverable error rather than silently producing a nonminimal result.
 Empty-side changes take a direct path. Search costs are proportional to sequence
 length and edit distance; this implementation retains quadratic trace space in
-the edit distance, with the configured cap.
+the edit distance, with the configured cap. Reconstruction coalesces whole equal runs and adjacent
+edits directly from the trace: it takes O(D + 1) time and output space for edit
+distance D, without allocating an intermediate tag for every input element.
 
 `sequence_linear` / `sequence_linear_by` compute a shortest edit script using
 Hirschberg's LCS divide-and-conquer algorithm. They retain two reusable score

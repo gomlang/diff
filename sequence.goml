@@ -31,8 +31,25 @@ fn diagonal(row: Vec[isize], k: isize) -> isize {
     row[k + (row.len() - 1) / 2]
 }
 
-fn backtrack(trace: Vec[Vec[isize]], old_len: isize, new_len: isize) -> Vec[Tag] {
-    let result: Vec[Tag] = Vec::new();
+fn push_reverse(operations: Vec[Op], operation: Op) -> () {
+    if operation.old_start == operation.old_end && operation.new_start == operation.new_end {
+        return
+    }
+    if let Some(previous) = operations.last() {
+        if previous.tag == operation.tag {
+            operations[operations.len() - 1] = Op {
+                old_start: operation.old_start,
+                new_start: operation.new_start,
+                ..previous,
+            };
+            return
+        }
+    }
+    operations.push(operation);
+}
+
+fn backtrack(trace: Vec[Vec[isize]], old_len: isize, new_len: isize) -> Vec[Op] {
+    let result: Vec[Op] = Vec::new();
     let mut x = old_len;
     let mut y = new_len;
     let mut d = trace.len() - 1;
@@ -47,64 +64,58 @@ fn backtrack(trace: Vec[Vec[isize]], old_len: isize, new_len: isize) -> Vec[Tag]
         };
         let previous_x = diagonal(previous, previous_k);
         let previous_y = previous_x - previous_k;
-        while x > previous_x && y > previous_y {
-            result.push(Tag::Equal);
-            x -= 1;
-            y -= 1;
-        }
+        let count = if x - previous_x < y - previous_y {
+            x - previous_x
+        } else {
+            y - previous_y
+        };
+        push_reverse(
+            result,
+            Op {
+                tag: Tag::Equal,
+                old_start: x - count,
+                old_end: x,
+                new_start: y - count,
+                new_end: y,
+            },
+        );
+        x -= count;
+        y -= count;
         if x == previous_x {
-            result.push(Tag::Insert);
+            push_reverse(
+                result,
+                Op { tag: Tag::Insert, old_start: x, old_end: x, new_start: y - 1, new_end: y },
+            );
             y -= 1;
         } else {
-            result.push(Tag::Delete);
+            push_reverse(
+                result,
+                Op { tag: Tag::Delete, old_start: x - 1, old_end: x, new_start: y, new_end: y },
+            );
             x -= 1;
         }
         d -= 1;
     }
-    while x > 0 && y > 0 {
-        result.push(Tag::Equal);
-        x -= 1;
-        y -= 1;
-    }
-    while x > 0 {
-        result.push(Tag::Delete);
-        x -= 1;
-    }
-    while y > 0 {
-        result.push(Tag::Insert);
-        y -= 1;
-    }
+    let count = if x < y {
+        x
+    } else {
+        y
+    };
+    push_reverse(
+        result,
+        Op { tag: Tag::Equal, old_start: x - count, old_end: x, new_start: y - count, new_end: y },
+    );
+    x -= count;
+    y -= count;
+    push_reverse(
+        result,
+        Op { tag: Tag::Delete, old_start: 0, old_end: x, new_start: y, new_end: y },
+    );
+    push_reverse(
+        result,
+        Op { tag: Tag::Insert, old_start: 0, old_end: 0, new_start: 0, new_end: y },
+    );
     result.reverse();
-    result
-}
-
-fn compact(steps: Vec[Tag]) -> Vec[Op] {
-    let result: Vec[Op] = Vec::new();
-    let mut old_pos = 0;
-    let mut new_pos = 0;
-    for tag in steps {
-        let old_start = old_pos;
-        let new_start = new_pos;
-        if tag != Tag::Insert {
-            old_pos += 1;
-        }
-        if tag != Tag::Delete {
-            new_pos += 1;
-        }
-        if let Some(previous) = result.last() {
-            if previous.tag == tag {
-                result[result.len() - 1] = Op {
-                    tag,
-                    old_start: previous.old_start,
-                    old_end: old_pos,
-                    new_start: previous.new_start,
-                    new_end: new_pos,
-                };
-                continue;
-            }
-        }
-        result.push(Op { tag, old_start, old_end: old_pos, new_start, new_end: new_pos });
-    }
     result
 }
 
@@ -190,7 +201,7 @@ pub fn sequence_by[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, optio
             row[k + d] = x;
             if x >= old.len() && y >= new.len() {
                 trace.push(row);
-                return Result::Ok(compact(backtrack(trace, old.len(), new.len())))
+                return Result::Ok(backtrack(trace, old.len(), new.len()))
             }
             k += 2;
         }
