@@ -137,7 +137,7 @@ fn range_text(start: isize, count: isize) -> string {
     f"{line},{count}"
 }
 
-fn validate_hunk(hunk: Hunk) -> Result[(), string] {
+fn validate_hunk(hunk: Hunk) -> Result[(bool, bool), string] {
     if hunk.old_start < 0 || hunk.new_start < 0 || hunk.old_count < 0 || hunk.new_count < 0 {
         return Result::Err("negative patch range")
     }
@@ -178,22 +178,32 @@ fn validate_hunk(hunk: Hunk) -> Result[(), string] {
     if old_count != hunk.old_count || new_count != hunk.new_count {
         return Result::Err("patch hunk counts do not match its lines")
     }
-    Result::Ok(())
+    Result::Ok((old_closed, new_closed))
 }
 
 fn validate_layout(hunks: Vec[Hunk]) -> Result[(), string] {
     let mut old_end = 0;
     let mut new_end = 0;
+    let mut old_closed = false;
+    let mut new_closed = false;
     for hunk in hunks {
-        validate_hunk(hunk)?;
+        let (closes_old, closes_new) = validate_hunk(hunk)?;
         if hunk.old_start < old_end || hunk.new_start < new_end {
             return Result::Err("patch hunks overlap or are out of order")
         }
         if hunk.old_start - old_end != hunk.new_start - new_end {
             return Result::Err("unchanged gap differs between old and new ranges")
         }
+        if old_closed && (hunk.old_start > old_end || hunk.old_count > 0) {
+            return Result::Err("old content continues after a missing newline")
+        }
+        if new_closed && (hunk.new_start > new_end || hunk.new_count > 0) {
+            return Result::Err("new content continues after a missing newline")
+        }
         old_end = hunk.old_start + hunk.old_count;
         new_end = hunk.new_start + hunk.new_count;
+        old_closed = old_closed || closes_old;
+        new_closed = new_closed || closes_new;
     }
     Result::Ok(())
 }

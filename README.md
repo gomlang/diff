@@ -70,6 +70,9 @@ position before returning a new string. Conflicts return an error with a source
 line; no input file is modified. `Patch::reverse` constructs the inverse patch.
 Publicly constructed models are validated too, including overlapping ranges,
 inconsistent counts, multi-line entries and misplaced missing-newline markers.
+Missing-newline markers end their respective file across all later hunks, including
+implicit unchanged gaps. Separate deletion and insertion hunks can still complete
+an end-of-file replacement when only the other file has remaining content.
 
 The format API handles one file per patch. It does not perform fuzzy matching,
 rename detection, filesystem writes, binary Git patches or three-way merging.

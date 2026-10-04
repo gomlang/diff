@@ -298,6 +298,74 @@ fn separated_hunks_and_invalid_models() -> () {
 }
 
 #[test]
+fn missing_newline_is_terminal_across_hunks() -> () {
+    for gap in 0..2 {
+        let invalid = diff::Patch {
+            old_name: "old",
+            new_name: "new",
+            hunks: Vec::from_array(
+                [
+                    diff::Hunk {
+                        old_start: 0,
+                        old_count: 1,
+                        new_start: 0,
+                        new_count: 1,
+                        lines: Vec::from_array(
+                            [
+                                diff::PatchLine { tag: diff::Tag::Delete, text: "old" },
+                                diff::PatchLine { tag: diff::Tag::Insert, text: "new\n" },
+                            ],
+                        ),
+                    },
+                    diff::Hunk {
+                        old_start: 1 + gap,
+                        old_count: 1,
+                        new_start: 1 + gap,
+                        new_count: 1,
+                        lines: Vec::from_array(
+                            [diff::PatchLine { tag: diff::Tag::Equal, text: "tail\n" }],
+                        ),
+                    },
+                ],
+            ),
+        };
+        testing::assert_err(invalid.to_unified());
+        testing::assert_err(invalid.reverse().to_unified());
+        let at = (2 + gap).to_string();
+        let suffix = "@@ -" + at + " +" + at + " @@\n tail\n";
+        testing::assert_err(
+            diff::parse_unified(
+                "--- old\n+++ new\n@@ -1 +1 @@\n-old\n\\ No newline at end of file\n+new\n" + suffix,
+            ),
+        );
+        testing::assert_err(
+            diff::parse_unified(
+                "--- old\n+++ new\n@@ -1 +1 @@\n-old\n+new\n\\ No newline at end of file\n" + suffix,
+            ),
+        );
+    }
+    testing::assert_err(
+        diff::parse_unified(
+            "--- old\n+++ new\n@@ -1 +1 @@\n-old\n+new\n\\ No newline at end of file\n@@ -2,0 +2,0 @@\n",
+        ),
+    );
+}
+
+#[test]
+fn missing_newline_allows_remaining_changes_on_the_other_side() -> () {
+    let encoded = "--- old\n+++ new\n@@ -1 +0,0 @@\n-old\n\\ No newline at end of file\n@@ -1,0 +1 @@\n+new\n\\ No newline at end of file\n";
+    let patch = testing::expect_ok(diff::parse_unified(encoded), "split EOF replacement");
+    testing::assert_eq(
+        testing::expect_ok(patch.to_unified(), "render split replacement"),
+        "--- old\n+++ new\n@@ -1,1 +0,0 @@\n-old\n\\ No newline at end of file\n@@ -1,0 +1,1 @@\n+new\n\\ No newline at end of file\n",
+    );
+    testing::assert_eq(testing::expect_ok(patch.apply("old"), "apply split replacement"), "new");
+    let reverse = patch.reverse();
+    testing::assert_ok(reverse.to_unified());
+    testing::assert_eq(testing::expect_ok(reverse.apply("new"), "reverse split replacement"), "old");
+}
+
+#[test]
 fn myers_reconstructs_long_equal_runs_as_single_operations() -> () {
     let values: Vec[isize] = Vec::new();
     for index in 0..500000 {
