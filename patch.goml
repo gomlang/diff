@@ -62,6 +62,9 @@ pub fn patch_with(
         options,
         algorithm,
     )?;
+    if operations.is_empty() || (operations.len() == 1 && operations[0].tag == Tag::Equal) {
+        return Result::Ok(Patch { old_name, new_name, hunks: Vec::new() })
+    }
     let entries: Vec[PatchLine] = Vec::new();
     for operation in operations {
         if operation.tag == Tag::Insert {

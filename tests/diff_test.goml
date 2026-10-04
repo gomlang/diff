@@ -270,6 +270,74 @@ fn unified_format_and_conflicts() -> () {
 }
 
 #[test]
+fn unchanged_patches_preserve_names_and_algorithm_budgets() -> () {
+    for algorithm in[diff::Algorithm::Myers, diff::Algorithm::Hirschberg] {
+        for value in["", "\n", "a\n\n", "界😀\r\n", "e\u0301\r\nlast"] {
+            let count = diff::lines(value).len();
+            let work = if count == 0 {
+                1
+            } else if algorithm == diff::Algorithm::Myers {
+                count + 2
+            } else {
+                count + 1
+            };
+            for context in[0, 3, 1000000] {
+                let patch = testing::expect_ok(
+                    diff::patch_with(
+                        value,
+                        value,
+                        "old😀",
+                        "new界",
+                        context,
+                        diff::Options { max_work: work, max_trace: 1 },
+                        algorithm,
+                    ),
+                    "unchanged patch at exact budget",
+                );
+                testing::assert_eq(patch.old_name, "old😀");
+                testing::assert_eq(patch.new_name, "new界");
+                testing::assert(patch.hunks.is_empty());
+                testing::assert_eq(testing::expect_ok(patch.to_unified(), "render"), "");
+                testing::assert_eq(testing::expect_ok(patch.apply(value), "apply"), value);
+                let reversed = patch.reverse();
+                testing::assert_eq(reversed.old_name, "new界");
+                testing::assert_eq(reversed.new_name, "old😀");
+                testing::assert_eq(testing::expect_ok(reversed.apply(value), "reverse"), value);
+            }
+            if count > 0 {
+                testing::assert_eq(
+                    testing::expect_err(
+                        diff::patch_with(
+                            value,
+                            value,
+                            "old",
+                            "new",
+                            3,
+                            diff::Options { max_work: work - 1, max_trace: 1 },
+                            algorithm,
+                        ),
+                        "unchanged patch still charges comparisons",
+                    ),
+                    "diff work budget exceeded",
+                );
+            }
+            for options in[
+                diff::Options { max_work: 0, max_trace: 1 },
+                diff::Options { max_work: 1, max_trace: 0 },
+            ] {
+                testing::assert_eq(
+                    testing::expect_err(
+                        diff::patch_with(value, value, "old", "new", 0, options, algorithm),
+                        "unchanged patch still validates budgets",
+                    ),
+                    "diff budgets must be positive",
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn separated_hunks_and_invalid_models() -> () {
     let old = "a\nb\nc\nd\ne\nf\ng\nh\n";
     let new = "A\nb\nc\nd\ne\nf\ng\nH\n";

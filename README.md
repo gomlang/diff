@@ -67,6 +67,9 @@ one-based ranges and missing-newline markers. Identical input produces an empty
 patch. `parse_unified` accepts omitted single-line counts, file timestamps and
 hunk section descriptions.
 
+For identical inputs, patch generation still checks the selected algorithm's
+budgets, but avoids expanding equal operations into per-line patch records.
+
 `Patch::apply` checks every context/deleted line, range count and destination
 position before returning a new string. Conflicts return an error with a source
 line; no input file is modified. `Patch::reverse` constructs the inverse patch.
