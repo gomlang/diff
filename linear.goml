@@ -39,7 +39,11 @@ fn lcs_row[T](
 ) -> Result[(), string] {
     spend(work, new.len() + 1)?;
     for index in 0..new.len() + 1 {
-        row[index] = 0;
+        if index < row.len() {
+            row[index] = 0;
+        } else {
+            row.push(0);
+        }
     }
     for index in 0..old.len() {
         let x = if reverse {
@@ -164,10 +168,6 @@ fn hirschberg[T](old: Slice[T], new: Slice[T], equal: (T, T) -> bool, options: O
         let width = end_y - y + 1;
         if width > options.max_trace / 2 {
             return Result::Err("diff linear workspace budget exceeded")
-        }
-        while forward.len() < width {
-            forward.push(0);
-            backward.push(0);
         }
         let middle = x + (end_x - x) / 2;
         lcs_row(old.sub(x, middle), new.sub(y, end_y), false, equal, forward, work)?;

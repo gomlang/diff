@@ -36,8 +36,10 @@ rows of at most `min(old.len(), new.len()) + 1` cells each, an O(log(max(N, M)))
 explicit task stack, and the output. Common prefixes/suffixes and one-element
 segments use direct paths. There is no recursive call-stack growth or quadratic
 retained trace. `max_trace` bounds score-row cells; `max_work` bounds comparisons,
-row initialization, split selection and segment processing. Budget exhaustion
-returns an error without exposing a partial script.
+row initialization, split selection and segment processing. Each row's
+initialization is charged before its storage grows, so an exhausted work budget
+does not allocate score-row storage. Budget exhaustion returns an error without
+exposing a partial script.
 
 Worst-case time is O(NM), so this mode is useful when large edit distances would
 exhaust the Myers trace. It can choose a different equally minimal script on
