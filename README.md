@@ -87,7 +87,7 @@ the standard English spelling; generate reference patches with `LC_ALL=C`.
 ## Validation and example executable
 
 ```sh
-(cd ../verification && just ecosystem-test diff)
+(cd ../workflows && just ecosystem-test diff)
 _artifact/bin/examples/patch/patch produce old.txt new.txt change.patch
 _artifact/bin/examples/patch/patch produce-linear old.txt new.txt change.patch
 _artifact/bin/examples/patch/patch apply old.txt change.patch output.txt
@@ -107,12 +107,12 @@ Algorithm reference: [Eugene W. Myers, An O(ND) Difference Algorithm and Its Var
 
 ## Development and examples
 
-Requires the [current GoML toolchain](https://github.com/gomlang/verification/blob/main/ci/toolchain.json) with unversioned registry support. The `examples/patch/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
+Requires the [current GoML toolchain](https://github.com/gomlang/workflows/blob/main/ci/toolchain.json) with unversioned registry support. The `examples/patch/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
 
 ```sh
 goml run --example patch
 goml test
-(cd ../verification && just ecosystem-test diff)
+(cd ../workflows && just ecosystem-test diff)
 ```
 
-`goml test` builds the example and runs its tests. `(cd ../verification && just ecosystem-test diff)` runs the library-specific smoke and compatibility checks.
+`goml test` builds the example and runs its tests. `(cd ../workflows && just ecosystem-test diff)` runs the library-specific smoke and compatibility checks.
