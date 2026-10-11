@@ -107,12 +107,12 @@ Algorithm reference: [Eugene W. Myers, An O(ND) Difference Algorithm and Its Var
 
 ## Development and examples
 
-Requires GoML 0.1.56 or newer. The `examples/patch/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
+Requires the [current GoML toolchain](https://github.com/gomlang/verification/blob/main/ci/toolchain.json) with unversioned registry support. The `examples/patch/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
 
 ```sh
 goml run --example patch
 goml test
-goml verify --timeout 300s
+(cd ../verification && just ecosystem-test diff)
 ```
 
-`goml test` builds the example and runs its tests. `goml verify` repeats the example checks as an independent module against an isolated registry snapshot. `(cd ../verification && just ecosystem-test diff)` also retains the library-specific smoke and compatibility checks.
+`goml test` builds the example and runs its tests. `(cd ../verification && just ecosystem-test diff)` runs the library-specific smoke and compatibility checks.
